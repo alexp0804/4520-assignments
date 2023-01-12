@@ -16,7 +16,7 @@ This approach is efficient because each of the threads are able to work independ
 # Evaluation
 On my system, computing the primes up until $10^8$ with $8$ threads took an average of $8.07$ seconds. I ran the computation $100$ times to compute this average. I also ran the code with only a single thread, which took approximately $55.31$ seconds on average.
 
-This shows a runtime decrease of about $85%$.
+This shows a runtime decrease of about $85$%.
 
 # Compiling and Running
 Navigate to the ``assignment-1`` directory and run with `cargo run --release`.
