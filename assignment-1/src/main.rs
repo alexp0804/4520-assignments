@@ -11,7 +11,7 @@ use std::thread;
 fn main() {
     // Constants
     let max_candidate = 10_i64.pow(8);
-    let n_threads = 1;
+    let n_threads = 8;
 
     // Thread variables
     let next_candidate = Arc::new(Mutex::new(1));
