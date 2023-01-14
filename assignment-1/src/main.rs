@@ -11,12 +11,12 @@ use std::thread;
 fn main() {
     // Constants
     let max_candidate = 10_i64.pow(8);
-    let n_threads = 8;
+    let n_threads = 1;
 
     // Thread variables
     let next_candidate = Arc::new(Mutex::new(1));
     let prime_heap = Arc::new(Mutex::new(BinaryHeap::<Reverse<i64>>::new()));
-    // # of primes, sum(primes)
+    // (number of primes, sum of primes)
     let prime_info = Arc::new(Mutex::new((0, 0)));
     
     let mut handles = vec![];
@@ -100,13 +100,18 @@ fn is_prime(n: i64) -> bool {
     if n <= 1 {
         return false;
     }
+    if n == 2 {
+        return true;
+    }
 
-    let mut i: i64 = 2;
+    // Since we are only checking odd numbers we can start at three
+    let mut i: i64 = 3;
     while (i*i) <= n {
         if n % i == 0 {
             return false;
         }
-        i += 1;
+        // And skip any even number
+        i += 2;
     }
     return true;
 }

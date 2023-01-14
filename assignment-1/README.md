@@ -12,9 +12,10 @@ Once a thread is finished, it's information is added to the information in the m
 # Efficiency
 This approach is efficient because each of the threads are able to work independently of each other easily, as no thread relies on another. The only time a thread has to wait on another is when getting the next number from the counter and when merging heaps at the end of it's computations. The counter is held for a minimal amount of time, so for most of the computation time, the threads do not wait on each other.
 
+I also decreased the number of candidates to check by half by ignoring every even number other than two. I also used the fact that the only even number I would be checking for primality is 2 to optimize my `is_prime()` function by skipping even factors.
 
 # Evaluation
-On my system, computing the primes up until $10^8$ with $8$ threads took an average of $8.07$ seconds. I ran the computation $100$ times to compute this average. I also ran the code with only a single thread, which took approximately $55.31$ seconds on average.
+On my system, computing the primes up until $10^8$ with $8$ threads took an average of $4.44$ seconds. I also ran the code with only a single thread, which took approximately $28.02$ seconds on average.
 
 This shows a runtime decrease of about $85$%.
 
