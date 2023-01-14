@@ -22,4 +22,6 @@ This shows a runtime decrease of about $85$%.
 # Compiling and Running
 Navigate to the ``assignment-1`` directory and run with `cargo run --release`.
 
+Alternatively, in the ``assignment-1/src`` directory, compile with ``rustc -C opt-level=3 main.rs`` and run the executable file it creates with ``/.main``.
+
 [Guide to install Cargo or Rust, if it is not installed.](https://doc.rust-lang.org/book/ch01-01-installation.html#installation)
