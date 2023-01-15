@@ -13,7 +13,7 @@ Each thread gets approximately the same amount of work to do. All numbers close 
 I also decreased the number of candidates to check by half by ignoring every even number other than two. I used the fact that the only even number I would be checking for primality is 2 to optimize my `is_prime()` function by skipping even factors. This significantly cuts down computation time as the candidates get larger.
 
 # Evaluation
-On my system running an i5-13600k, computing the primes up until $10^8$ with $8$ threads took an average of $4.44$ seconds. I also ran the code with only a single thread, which took approximately $28.02$ seconds on average.
+On my system running an i5-13600k, computing the primes up until $10^8$ with $8$ threads took an average of $3.60$ seconds. I also ran the code with only a single thread, which took approximately $28.02$ seconds on average.
 
 This shows a runtime decrease of about $85$%.
 

@@ -2,35 +2,34 @@
 // Alexander Peterson
 // COP 4520 - Assignment 1
 
-use std::collections::BinaryHeap;
-use std::cmp::Reverse;
 use std::time::Instant;
 use std::sync::{Arc, Mutex};
 use std::thread;
 
-fn main() {
-    // Constants
-    let max_candidate = 10_i64.pow(8);
-    let n_threads = 8;
+const MAX_CANDIDATE: i64 = 10_i64.pow(8);
+const N_THREADS: i32 = 8;
+const N_PRIMES: usize = 10;
 
+fn main() {
     // Thread variables
     let next_candidate = Arc::new(Mutex::new(1));
-    let prime_heap = Arc::new(Mutex::new(BinaryHeap::<Reverse<i64>>::new()));
+    let prime_list = Arc::new(Mutex::new(vec![0; N_PRIMES]));
     // (number of primes, sum of primes)
     let prime_info = Arc::new(Mutex::new((0, 0)));
-    
+
     let mut handles = vec![];
     let start = Instant::now();
 
-    for _ in 0..n_threads {
+    for _ in 0..N_THREADS {
         let next_candidate = Arc::clone(&next_candidate);
-        let prime_heap = Arc::clone(&prime_heap);
         let prime_info = Arc::clone(&prime_info);
+        let prime_list = Arc::clone(&prime_list);
 
         let handle = thread::spawn(move || {
             let mut local_sum = 0;
             let mut local_count = 0;
-            let mut local_heap = BinaryHeap::<Reverse<i64>>::new();
+            let mut local_list = vec![0; N_PRIMES];
+            let mut local_idx = 0;
 
             loop {
                 // Acquire candidate lock, increment, save the value for this thread, then drop it
@@ -41,17 +40,13 @@ fn main() {
                 *candidate += 1 + (*candidate > 2) as i64;
                 drop(candidate);
 
-                if my_candidate > max_candidate {
+                if my_candidate > MAX_CANDIDATE {
                     break;
                 }
 
                 if is_prime(my_candidate) {
-                    local_heap.push(Reverse(my_candidate));
-
-                    // If storing too many primes, trim it down
-                    while local_heap.len() > 10 {
-                        local_heap.pop();
-                    }
+                    local_list[local_idx] = my_candidate;
+                    local_idx = (local_idx + 1) % N_PRIMES;
 
                     // Update local sum and count
                     local_sum += my_candidate;
@@ -59,15 +54,17 @@ fn main() {
                 }
             }
 
-            // Once done looping, update the main sum, main prime count and the main heap
+            // Once done looping, update the main sum, main prime count and the main list
             let mut my_info = prime_info.lock().unwrap();
             my_info.0 += local_count;
             my_info.1 += local_sum;
             drop(my_info);
 
-            let mut my_heap = prime_heap.lock().unwrap();
-            my_heap.append(&mut local_heap);
-            drop(my_heap);
+            let mut my_list = prime_list.lock().unwrap();
+            my_list.append(&mut local_list);
+            my_list.sort();
+            my_list.drain(0..N_PRIMES);
+            drop(my_list);
         });
 
         handles.push(handle);
@@ -80,38 +77,36 @@ fn main() {
 
     let duration = start.elapsed();
 
-    // Output execution time, number of primes, and sum of all primes found, and top 10 primes.
+    // Output execution time, number of primes, and sum of all primes found, and top 10 primes
     let results = *prime_info.lock().unwrap();
     println!("{:.2?} {} {}", duration, results.0, results.1);
 
-    let mut max_primes = prime_heap.lock().unwrap().clone();
-    while max_primes.len() > 10 {
-        max_primes.pop();
+    let prime_list = prime_list.lock().unwrap().clone();
+    for prime in prime_list {
+        print!("{} ", prime);
     }
-    for prime in max_primes.into_sorted_vec().iter().rev() {
-        print!("{} ", prime.0);
-    }
+
     println!();
 }
 
 // Iterative approach for checking a number's primality
 // O(sqrt(n)) time, O(1) space
+// Uses the 6k +- 1 trick detailed in this Wikipedia article:
+// https://en.wikipedia.org/wiki/Primality_test#Simple_methods 
 fn is_prime(n: i64) -> bool {
-    if n <= 1 {
+    if n <= 3 {
+        return n > 1;
+    }
+    if n % 2 == 0 || n % 3 == 0 {
         return false;
     }
-    if n == 2 {
-        return true;
-    }
 
-    // Since we are only checking odd numbers we can start at three
-    let mut i: i64 = 3;
+    let mut i: i64 = 5;
     while (i*i) <= n {
-        if n % i == 0 {
+        if n % i == 0 || n % (i + 2) == 0 {
             return false;
         }
-        // And skip any even number
-        i += 2;
+        i += 6;
     }
     return true;
 }
