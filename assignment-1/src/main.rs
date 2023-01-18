@@ -6,7 +6,7 @@ use std::time::Instant;
 use std::sync::{Arc, Mutex};
 use std::thread;
 
-const MAX_CANDIDATE: i64 = 10_i64.pow(8);
+const MAX_CANDIDATE: i32 = 10_i32.pow(8);
 const N_THREADS: i32 = 8;
 const N_PRIMES: usize = 10;
 
@@ -37,7 +37,7 @@ fn main() {
                 let my_candidate = *candidate;
 
                 // No need to check even numbers (other than 2)
-                *candidate += 1 + (*candidate > 2) as i64;
+                *candidate += 1 + (*candidate > 2) as i32;
                 drop(candidate);
 
                 if my_candidate > MAX_CANDIDATE {
@@ -49,7 +49,7 @@ fn main() {
                     local_idx = (local_idx + 1) % N_PRIMES;
 
                     // Update local sum and count
-                    local_sum += my_candidate;
+                    local_sum += my_candidate as i64;
                     local_count += 1;
                 }
             }
@@ -57,7 +57,7 @@ fn main() {
             // Once done looping, update the main sum, main prime count and the main list
             let mut my_info = prime_info.lock().unwrap();
             my_info.0 += local_count;
-            my_info.1 += local_sum;
+            my_info.1 += local_sum as i64;
             drop(my_info);
 
             let mut my_list = prime_list.lock().unwrap();
@@ -93,7 +93,7 @@ fn main() {
 // O(sqrt(n)) time, O(1) space
 // Uses the 6k +- 1 trick detailed in this Wikipedia article:
 // https://en.wikipedia.org/wiki/Primality_test#Simple_methods 
-fn is_prime(n: i64) -> bool {
+fn is_prime(n: i32) -> bool {
     if n <= 3 {
         return n > 1;
     }
@@ -101,7 +101,7 @@ fn is_prime(n: i64) -> bool {
         return false;
     }
 
-    let mut i: i64 = 5;
+    let mut i: i32 = 5;
     while (i*i) <= n {
         if n % i == 0 || n % (i + 2) == 0 {
             return false;
