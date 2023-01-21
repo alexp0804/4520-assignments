@@ -17,6 +17,8 @@ On my system running an i5-13600k, computing the primes up until $10^8$ with $8$
 
 This shows a runtime decrease of about $85$%.
 
+I also tested the program to find primes numbers in a different range. When I set the max candidate to be $10$, it found the primes $2$, $3$, $5$, $7$ and their sum $17$, which is correct. I also set the max candidate to $100$, and it found the top primes to be $53$, $59$, $61$, $67$, $71$, $73$, $79$, $83$, $89$, $97$, with a sum of $1060$, which is correct again.
+
 # Compiling and Running
 Navigate to the ``assignment-1`` directory and run with `cargo run --release`.
 

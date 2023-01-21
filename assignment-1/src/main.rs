@@ -83,7 +83,9 @@ fn main() {
 
     let prime_list = prime_list.lock().unwrap().clone();
     for prime in prime_list {
-        print!("{} ", prime);
+        if prime != 0 {
+            print!("{} ", prime);
+        }
     }
 
     println!();
