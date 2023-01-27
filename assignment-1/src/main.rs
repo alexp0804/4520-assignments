@@ -6,24 +6,29 @@ use std::thread;
 use std::time::Instant;
 
 /*
-    Computes Sieve of Eratosthanes by giving each thread a subset of (0..MAX_NUM), where all subsets are disjoint.
-To avoid communication between threads, we precompute all primes needed to sieve up to MAX_NUM before going parallel.
-This drastically improves speed, at the expense of needing to store the primes from [2..sqrt(MAX_NUM)].
+    Computes Sieve of Eratosthanes by giving each thread a subset of (0..MAX_NUM), where all subsets
+    are disjoint.  To avoid communication between threads, we precompute all primes needed to sieve
+    up to MAX_NUM before going parallel.
 
-For MAX_NUM = 100_000_000, that only turns out to be about 10_000 numbers, which is minimal enough.
+    This drastically improves speed, at the expense of needing to store the primes from
+    [2..sqrt(MAX_NUM)].
 
-If MAX_NUM is small enough, we use only one thread. The overhead of spawning and maintaining threads for such a small
-range to compute is not worth it.
+    For MAX_NUM = 100_000_000, that only turns out to be about 10_000 numbers, which is minimal
+    enough.
 
-We want to ensure the last precomputed prime is within the first block, so that we can use a simple parallel algorithm.
-We know:
-    LastPrePrime ~= sqrt(MAX_NUM),
-     and
-    BlockSize = MAX_NUM / N_THREADS
-     therefore
-    LastPrePrime <= BlockSize   ==>   sqrt(MAX_NUM) <= MAX_NUM / N_THREADS
-     so
-    N_THREADS >= MAX_NUM / sqrt(MAX_NUM)
+    If MAX_NUM is small enough, we use only one thread. The overhead of spawning and maintaining
+    threads for such a small range to compute is not worth it.
+
+    We want to ensure the last precomputed prime is within the first block, so that we can use a
+    simple parallel algorithm.  We know:
+
+        LastPrePrime ~= sqrt(MAX_NUM),
+          and
+        BlockSize = MAX_NUM / N_THREADS
+          therefore
+        LastPrePrime <= BlockSize   ==>   sqrt(MAX_NUM) <= MAX_NUM / N_THREADS
+          so
+        N_THREADS >= MAX_NUM / sqrt(MAX_NUM)
 
     With N_THREADS = 8, we can find
         MAX_NUM <= 64
@@ -152,7 +157,7 @@ fn main() {
             list.append(&mut top_n);
             list.sort();
             if list.len() > TOP_N {
-                let start = list.len() - TOP_N ;
+                let start = list.len() - TOP_N;
                 list.drain(0..start);
             }
             drop(list);
