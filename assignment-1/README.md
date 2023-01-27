@@ -12,7 +12,7 @@ Each thread gets approximately the same amount of work to do. The only exception
 I avoid extra memory by using a `BitVec` instead of a standard `Vec<bool>`. A `bool` is usually $8$ bits, but we can get away with using just $1$ in our sieve, so this uses an eigth of the space as a `Vec<bool>` implementation.
 
 # Evaluation
-On my system running an i5-13600k, computing the primes up until ${10}^8$ with $8$ threads took an average of $83.34$ milliseconds, over the course of $1000$ runs.
+On my system running an i5-13600k, computing the primes up until ${10}^8$ with $8$ threads took an average of $83.34$ milliseconds.
 
 I also tested the program to find primes numbers in a different range. When I set `MAX_NUM` to be $10$, it found the primes $2$, $3$, $5$, $7$ and their sum $17$, which is correct. I also tried setting `MAX_NUm` to $100$, and it found the top primes to be $53$, $59$, $61$, $67$, $71$, $73$, $79$, $83$, $89$, $97$, with a sum of $1060$, which is correct, again.
 
