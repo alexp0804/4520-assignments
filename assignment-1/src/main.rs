@@ -1,114 +1,143 @@
-
-// Alexander Peterson
-// COP 4520 - Assignment 1
-
-use std::time::Instant;
+use bitvec::prelude::*;
 use std::sync::{Arc, Mutex};
 use std::thread;
+use std::time::Instant;
 
-const MAX_CANDIDATE: i32 = 10_i32.pow(8);
-const N_THREADS: i32 = 8;
-const N_PRIMES: usize = 10;
+// The last prime is at most sqrt(MAX_NUM). The size of each block is MAX_NUM/N_THREADS.
+// With 8 threads, this means that for any value of MAX_NUM >= 64, the last prime we need will always be in the first block.
+// If we have less than 64, it's probably best to just llimit the number of threads. I chose to limit it to 1 thread, because additional threads
+// hardly affects performance for such a low amount of work to be done.
+const N_THREADS: usize = 8;
+const MAX_NUM: usize = 10_usize.pow(8);
+// const MAX_NUM: usize = 10;
+const TOP_N: usize = 10;
+
+// Computes the primes from 3 to sqrt(n) so all threads can reference it while sieving, with no overhead from communication
+fn compute_pre_sieve(n: i32) -> Vec<usize> {
+    let mut pre_sieve = bitvec![1; n as usize];
+
+    // It's just easier to manually set 0 and 1 to false
+    pre_sieve.set(0 as usize, false);
+    pre_sieve.set(1 as usize, false);
+
+    // Sift
+    let mut i = 1;
+    while i * i <= n {
+        // Found a prime
+        if pre_sieve[i as usize] {
+            // Remove multiples of the prime
+            let mut j = i * i;
+            while j < n {
+                pre_sieve.set(j as usize, false);
+                j += i;
+            }
+        }
+
+        i += 2;
+    }
+
+    // Put the primes into a vector and return it
+    let mut ret: Vec<usize> = vec![];
+    for i in 0..n {
+        if pre_sieve[i as usize] {
+            ret.push(i as usize);
+        }
+    }
+
+    ret
+}
 
 fn main() {
-    // Thread variables
-    let next_candidate = Arc::new(Mutex::new(1));
-    let prime_list = Arc::new(Mutex::new(vec![0; N_PRIMES]));
-    // (number of primes, sum of primes)
-    let prime_info = Arc::new(Mutex::new((0, 0)));
-
-    let mut handles = vec![];
     let start = Instant::now();
+    let pre_sieve = compute_pre_sieve(((MAX_NUM as f32).sqrt()) as i32);
+    let prime_info = Arc::new(Mutex::new((0, 0)));
+    let prime_list = Arc::new(Mutex::new(vec![0; TOP_N]));
+    let mut handles = vec![];
 
-    for _ in 0..N_THREADS {
-        let next_candidate = Arc::clone(&next_candidate);
+    let n_threads = if MAX_NUM > 64 { N_THREADS } else { 1 };
+    let block_size = MAX_NUM / n_threads;
+
+    for thread in 0..n_threads {
+        // Every thread gets a copy of the primes from 2..sqrt(n)
+        let primes = pre_sieve.clone();
         let prime_info = Arc::clone(&prime_info);
         let prime_list = Arc::clone(&prime_list);
 
         let handle = thread::spawn(move || {
-            let mut local_sum = 0;
-            let mut local_count = 0;
-            let mut local_list = vec![0; N_PRIMES];
-            let mut local_idx = 0;
+            // We give each thread a portion of the numbers from 1..MAX_NUM
+            let lo = thread * block_size;
+            let hi = (thread + 1) * block_size
+                + (thread == n_threads - 1) as usize * (MAX_NUM % n_threads);
+            let mut sieve_block = bitvec![1; hi - lo];
 
-            loop {
-                // Acquire candidate lock, increment, save the value for this thread, then drop it
-                let mut candidate = next_candidate.lock().unwrap();
-                let my_candidate = *candidate;
+            // 0 and 1 are not prime
+            if thread == 0 {
+                sieve_block.set(0, false);
+                sieve_block.set(1, false);
+            }
 
-                // No need to check even numbers (other than 2)
-                *candidate += 1 + (*candidate > 2) as i32;
-                drop(candidate);
+            for prime in primes {
+                // Fist occurence of a multiple of this prime in this range that is not the prime itself
+                let mut i = if lo % prime == 0 {
+                    lo
+                } else {
+                    lo + prime - lo % prime
+                };
+                if thread == 0 {
+                    i += 2 * prime
+                };
 
-                if my_candidate > MAX_CANDIDATE {
-                    break;
-                }
-
-                if is_prime(my_candidate) {
-                    local_list[local_idx] = my_candidate;
-                    local_idx = (local_idx + 1) % N_PRIMES;
-
-                    // Update local sum and count
-                    local_sum += my_candidate as i64;
-                    local_count += 1;
+                while i < hi {
+                    sieve_block.set(i - lo, false);
+                    i += prime;
                 }
             }
 
-            // Once done looping, update the main sum, main prime count and the main list
+            // Count the number of primes found and sum their values
+            let mut sum: usize = 0;
+            let mut count: usize = 0;
+            let mut top_n: Vec<i32> = vec![];
+
+            // Iterate backwards so we can add the top values immediately
+            for (i, bit) in sieve_block.iter().enumerate().rev() {
+                if *bit {
+                    if top_n.len() < TOP_N {
+                        top_n.push((i + lo) as i32);
+                    }
+                    sum += i + lo;
+                    count += 1;
+                }
+            }
+            // Only the last thread will have the TOP_N primes because it had the last chunk of the number line
+            if thread == n_threads - 1 {
+                let mut list = prime_list.lock().unwrap();
+                top_n.sort();
+                *list = top_n;
+                drop(list);
+            }
+
             let mut my_info = prime_info.lock().unwrap();
-            my_info.0 += local_count;
-            my_info.1 += local_sum as i64;
+            my_info.0 += count;
+            my_info.1 += sum;
+
+            // Mic drop
             drop(my_info);
-
-            let mut my_list = prime_list.lock().unwrap();
-            my_list.append(&mut local_list);
-            my_list.sort();
-            my_list.drain(0..N_PRIMES);
-            drop(my_list);
         });
-
         handles.push(handle);
     }
 
-    // Wait for all threads to finish
     for handle in handles {
         handle.join().unwrap();
     }
 
-    let duration = start.elapsed();
-
-    // Output execution time, number of primes, and sum of all primes found, and top 10 primes
     let results = *prime_info.lock().unwrap();
-    println!("{:.2?} {} {}", duration, results.0, results.1);
-
     let prime_list = prime_list.lock().unwrap().clone();
+    let duration = start.elapsed();
+    println!("{:.2?} {} {}", duration, results.0, results.1);
     for prime in prime_list {
         if prime != 0 {
             print!("{} ", prime);
         }
     }
-
     println!();
-}
-
-// Iterative approach for checking a number's primality
-// O(sqrt(n)) time, O(1) space
-// Uses the 6k +- 1 trick detailed in this Wikipedia article:
-// https://en.wikipedia.org/wiki/Primality_test#Simple_methods 
-fn is_prime(n: i32) -> bool {
-    if n <= 3 {
-        return n > 1;
-    }
-    if n % 2 == 0 || n % 3 == 0 {
-        return false;
-    }
-
-    let mut i: i32 = 5;
-    while (i*i) <= n {
-        if n % i == 0 || n % (i + 2) == 0 {
-            return false;
-        }
-        i += 6;
-    }
-    return true;
 }

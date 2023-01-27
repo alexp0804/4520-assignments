@@ -7,7 +7,7 @@ n = 10
 time = 0
 unit = None
 
-os.system('rustc -C opt-level=3 main.rs')
+os.system('rustc src/main.rs -C opt-level=3')
 for i in range(n):
     print(f'\r{(i/n)*100:.0f}% Complete', end="")
     info = os.popen('./main').read()
