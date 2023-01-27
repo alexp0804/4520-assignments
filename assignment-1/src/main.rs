@@ -95,7 +95,7 @@ fn get_first_occurence(prime: usize, lo: usize, block_idx: usize) -> usize {
 
 fn main() {
     let start = Instant::now();
-    let pre_sieve = compute_pre_sieve(((MAX_NUM as f32).sqrt()) as usize);
+    let pre_sieve = compute_pre_sieve(((MAX_NUM as f32).sqrt().ceil()) as usize);
 
     // Sum and count of primes, top N primes
     let prime_info = Arc::new(Mutex::new((0, 0)));
@@ -114,7 +114,7 @@ fn main() {
         let handle = thread::spawn(move || {
             // We give each thread a portion of the numbers from 1..MAX_NUM
             let (lo, hi) = compute_range(t, block_size, n_threads);
-            let mut sieve_block = bitvec![1; (hi - lo) as usize];
+            let mut sieve_block = bitvec![1; (hi - lo + 1) as usize];
 
             // 0 and 1 are not prime
             if t == 0 {
@@ -126,7 +126,7 @@ fn main() {
             for prime in primes {
                 let mut i = get_first_occurence(prime, lo, t);
 
-                while i < hi {
+                while i <= hi {
                     sieve_block.set((i - lo) as usize, false);
                     i += prime;
                 }
