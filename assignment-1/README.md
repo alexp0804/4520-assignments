@@ -1,27 +1,25 @@
 # Design
-My design involves using eight threads to simultaneously check the range of numbers from $2$ to $10^8$ (skipping most even numbers) for their primality using a shared counter variable to indicate which number needs to be checked next.
 
-The function for checking if a number $x$ is prime uses an iterative approach, checking to see if each number from $2$ up until $\lfloor \sqrt x \rfloor$ (again, skipping most even numbers) divides $x$. If any number in that range divides $x$, the number is not prime. If all numbers in that range do not divide $x$, then $x$ is prime.
+My design splits the range from $[2, {10}^8]$ into approximately evenly sized chunks, one for each thread. Each thread gets a precomputed list of the first $[2, \sqrt {{10}^8}]$ primes, so they can all work independently.
 
-Once the counter variable exceeds the last candidate number, each thread brings what it found to the main thread, where the information is then outputted.
+This involves computing the first $[2, \sqrt {{10}^8}]$ primes sequentially. However, since the range is small, this can be done efficiently with just one thread.
 
 # Efficiency
-This approach is efficient because each of the threads are able to work independently of each other, as no thread relies on another to check primality. The only time a thread has to wait on another is when getting the next candidate from the counter or if merging it's information after all computation is done. However, since the counter is held for a minimal amount of time, the threads do not wait on each other for a majority of computation time, allowing for efficient computation.
+Because each thread works entirely independent of the others, we achieve maximum speedup from parallelism. The entire task of sifting composites from the range of $[2, \sqrt {10}^8]$ is parallelized.
 
-Each thread gets approximately the same amount of work to do. All numbers close to a value of the counter take approximately the same amount of time to check if a candidate is prime. Since the threads use the counter as the next candidate, at any given time the threads will have an approximately equal amount of work.
+Each thread gets approximately the same amount of work to do. The only exception is the last thread, which might have a slightly larger range if `N_THREADS` does not divide `MAX_NUM`. The amount of added numbers this range needs to check is at most `N_THREADS`, so it is hardly a concern.
 
-I also decreased the number of candidates to check by half by ignoring every even number other than two. I used the fact that the only even number I would be checking for primality is 2 to optimize my `is_prime()` function by skipping even factors. This significantly cuts down computation time as the candidates get larger.
+I avoid extra memory by using a `BitVec` instead of a standard `Vec<bool>`. A `bool` is usually $8$ bits, but we can get away with using just $1$ in our sieve, so this uses an eigth of the space as a `Vec<bool>` implementation.
 
 # Evaluation
-On my system running an i5-13600k, computing the primes up until $10^8$ with $8$ threads took an average of $3.60$ seconds. I also ran the code with only a single thread, which took approximately $28.02$ seconds on average.
+On my system running an i5-13600k, computing the primes up until ${10}^8$ with $8$ threads took an average of $83.34$ milliseconds, over the course of $1000$ runs.
 
-This shows a runtime decrease of about $85$%.
-
-I also tested the program to find primes numbers in a different range. When I set the max candidate to be $10$, it found the primes $2$, $3$, $5$, $7$ and their sum $17$, which is correct. I also set the max candidate to $100$, and it found the top primes to be $53$, $59$, $61$, $67$, $71$, $73$, $79$, $83$, $89$, $97$, with a sum of $1060$, which is correct again.
+I also tested the program to find primes numbers in a different range. When I set `MAX_NUM` to be $10$, it found the primes $2$, $3$, $5$, $7$ and their sum $17$, which is correct. I also tried setting `MAX_NUm` to $100$, and it found the top primes to be $53$, $59$, $61$, $67$, $71$, $73$, $79$, $83$, $89$, $97$, with a sum of $1060$, which is correct, again.
 
 # Compiling and Running
 Navigate to the ``assignment-1`` directory and run with `cargo run --release`.
+The output file should appear in the `assignment-1` directory, named `primes.txt`.
 
-Alternatively, in the ``assignment-1/src`` directory, compile with ``rustc -C opt-level=3 main.rs`` and run the executable file it creates with ``./main``.
+You must use `cargo` to build this, as it relies on a dependency for the `BitVec`.
 
 [Guide to install Cargo or Rust, if it is not installed.](https://doc.rust-lang.org/book/ch01-01-installation.html#installation)
