@@ -30,9 +30,9 @@ I tested my solution with varying sizes of $N$. The counter was equal to the num
 
 | N      | Average Runtime (over 100 runs)|
 | ------ | ----------- |
-| 50     | 6.54 ms     |
-| 250    | 131.49 ms   |
-| 500    | 347.83 ms   |
+| 50     | 19.20 ms    |
+| 100    | 59.56 ms   |
+| 250    | 174.83 ms   |
 
 #
 # Problem 2
@@ -63,14 +63,20 @@ Solution #3 is the optimal solution, because it maximizes the number of people w
 
 ## Proof of Correctness, Efficiency, and Evaluation
 
-My program simulates a queue by using a shared integer between all threads that indicate which guest is to go next. Once a guest leaves the room, it increments the integer and the next thread will see that it can enter the room.
+My program uses a queue that is shared between all the quests that decide who gets to enter the room. Once a guest is finished visiting the room, it selects the next guest who now enters the room. The guest also decides if it wants to reenter the queue, or go back to the party. The process continues until no guests are left in the queue.
 
 This is efficient because it allows for no wasted time inbetween a guest leaving the room and another guest entering the room.
 
-I tested my solution with varying sizes of $N$. All $N$ guests entered the room.
+I tested my solution with varying sizes of $N$, with a $70%$ chance to enter the room initially, and a $20%$ chance to reenter the room after visiting, allowing them to visit any number of times.
 
-| N      | Average Runtime (over 1000 runs)|
+| N      | Average Runtime (over 500 runs)|
 | ------ | ---------|
-| 50     | 1.18 ms  |
-| 250    | 9.24 ms  |
-| 500    | 27.79 ms |
+| 50     | 6.82 ms  |
+| 100    | 28.38 ms  |
+| 250    | 146.95 ms |
+
+# Compiling and Running
+Navigate to the ``assignment-2`` directory and run with `cargo run --release`.
+You must use `cargo` to build this, as it relies on a dependency for the `rand`.
+
+[Guide to install Cargo or Rust, if it is not installed.](https://doc.rust-lang.org/book/ch01-01-installation.html#installation)
