@@ -67,7 +67,7 @@ My program uses a queue that is shared between all the quests that decide who ge
 
 This is efficient because it allows for no wasted time inbetween a guest leaving the room and another guest entering the room.
 
-I tested my solution with varying sizes of $N$, with a $70%$ chance to enter the room initially, and a $20%$ chance to reenter the room after visiting, allowing them to visit any number of times.
+I tested my solution with varying sizes of $N$, with a %$70$ chance to enter the room initially, and a %$20$ chance to reenter the room after visiting, allowing them to visit any number of times.
 
 | N      | Average Runtime (over 500 runs)|
 | ------ | ---------|
